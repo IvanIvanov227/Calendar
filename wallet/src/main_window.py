@@ -77,7 +77,7 @@ class Calendar(QMainWindow):
                     flag = True
                     break
             if flag:
-                self.list_events = ListEvents(self.dict_dates, row, self.current_days[col - 1])
+                self.list_events = ListEvents(self.dict_dates[self.current_days[col - 1]], row, self.current_days[col - 1])
                 self.list_events.exec_()
             else:
                 time_start = self.tableWidget.item(row, 0).text()
@@ -86,7 +86,7 @@ class Calendar(QMainWindow):
                 self.event = NewEvent(time_start, time_end, date)
                 self.event.setModal(True)
                 self.event.exec_()
-                self.data_to_table()
+            self.data_to_table()
 
     def new_week(self):
         date_string = self.current_days[0]
@@ -201,6 +201,12 @@ class Calendar(QMainWindow):
         self.draw_events()
 
     def draw_events(self):
+        for i in range(24):
+            for j in range(1, 8):
+                item = QTableWidgetItem()
+                item.setBackground(QColor(255, 255, 255))
+                self.tableWidget.setItem(i, j, item)
+
         for day in self.dict_dates:
             col = self.current_days.index(day) + 1
             for key, value in self.dict_dates[day].items():

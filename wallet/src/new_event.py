@@ -1,18 +1,24 @@
 from PyQt5 import uic
-from PyQt5.QtCore import QDate, QTime
+from PyQt5.QtCore import QDate, QTime, Qt
 from PyQt5.QtWidgets import QMessageBox, QDialog
 import sqlite3
 
 
 class NewEvent(QDialog):
-    def __init__(self, time_start, time_end, date):
+    def __init__(self, time_start, time_end, date, additional=None):
         super().__init__()
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         uic.loadUi('scripts/ui/new_event.ui', self)
         self.SaveEdit.clicked.connect(self.save)
         self.time_start = QTime(int(time_start.split(':')[0]), int(time_start.split(':')[1]))
         self.time_end = QTime(int(time_end.split(':')[0]), int(time_end.split(':')[1]))
         self.times = []
         self.date = date
+        self.additional = additional
+        if additional is not None:
+            self.title = additional[0]
+            self.description = additional[1]
+            self.id_event = additional[2]
         self.start()
         self.timeEditStart.setMaximumTime(QTime(23, 30))
         self.timeEditEnd.setMaximumTime(QTime(23, 45))
@@ -22,6 +28,10 @@ class NewEvent(QDialog):
         self.cur = self.con.cursor()
 
     def start(self):
+        if self.additional is not None:
+            self.titleEdit.setText(self.title)
+            self.descriptionEdit.setPlainText(self.description)
+
         self.timeEditStart.setTime(self.time_start)
         self.timeEditEnd.setTime(self.time_end)
         date = QDate(int(self.date[:4]), int(self.date[5:7]), int(self.date[8:]))
@@ -60,7 +70,30 @@ class NewEvent(QDialog):
             error_message = "Обязательно должно быть название!"
             QMessageBox.critical(self, "Ошибка", error_message, QMessageBox.Ok)
         else:
-            string = 'INSERT INTO events(title, description, time_start, time_end, date) VALUES(?, ?, ?, ?, ?)'
-            self.cur.execute(string, (title, description, time_start, time_end, date))
+            if self.additional is None:
+                string = 'INSERT INTO events(title, description, time_start, time_end, date) VALUES(?, ?, ?, ?, ?)'
+                self.cur.execute(string, (title, description, time_start, time_end, date))
+
+            else:
+                string = '''UPDATE events 
+                SET title = ?, description = ?, time_start = ?, time_end = ?, date = ?
+                WHERE id = ?'''
+                self.cur.execute(string, (title, description, time_start, time_end, date, self.id_event))
             self.con.commit()
             self.hide()
+
+    def closeEvent(self, event):
+        msg_box = QMessageBox()
+        msg_box.setText("Вы передумали создавать событие?")
+        msg_box.setIcon(QMessageBox.Question)
+        msg_box.setWindowTitle("Подтверждение")
+
+        msg_box.addButton(QMessageBox.Yes)
+        msg_box.addButton(QMessageBox.No)
+
+        result = msg_box.exec_()
+
+        if result == QMessageBox.Yes:
+            event.accept()
+        else:
+            event.ignore()
