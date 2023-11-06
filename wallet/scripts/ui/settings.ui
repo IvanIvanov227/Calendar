@@ -42,7 +42,7 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QCommandLinkButton" name="commandButtonColor">
+     <widget class="QCommandLinkButton" name="commandButtonColorEvents">
       <property name="text">
        <string>Выбрать цвет событий в календаре</string>
       </property>

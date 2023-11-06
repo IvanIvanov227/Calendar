@@ -1,25 +1,37 @@
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon, QFont, QPixmap
-from PyQt5.QtWidgets import QDialog, QWidget, QScrollArea, QVBoxLayout, QPushButton, QHBoxLayout, QLabel, \
-    QPlainTextEdit, QMessageBox, QLineEdit
+from PyQt5.QtWidgets import QDialog, QWidget, QScrollArea, QVBoxLayout, QPushButton, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QPlainTextEdit, QMessageBox, QLineEdit
 
 from new_event import NewEvent
 import sqlite3
 
 
 class ListEvents(QDialog):
-    def __init__(self, events, row, day):
+    """Виджет со списком событий"""
+    def __init__(self, events, row, day, func_delete=None, func_edit=None):
         super().__init__()
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-        self.data_buttons_edit = None
-        self.data_buttons_delete = None
+
+        # Форма для добавления нового события
         self.event = None
+        # Словарь, ключ - объект кнопки, значение - информация об это событии
+        self.data_buttons_edit = None
+        # Словарь, ключ - объект кнопки, значение - id события
+        self.data_buttons_delete = None
+
+        # Функции для удаления и изменения событий
+        self.func_delete = func_delete
+        self.func_edit = func_edit
+
         self.width = 800
         self.height = 400
         self.setGeometry(300, 300, self.width, self.height)
         self.setWindowTitle("Список событий")
         self.setFixedSize(self.width, self.height)
+        # Данные о событиях
         self.events = events
+        # Номер записи и день выбранного события
         self.row = row
         self.day = day
         self.con = sqlite3.connect('scripts/db_calendar.sqlite')
@@ -27,6 +39,7 @@ class ListEvents(QDialog):
         self.draw_events()
 
     def draw_events(self):
+        """Отображение списка событий"""
         scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)
         scroll_area.setGeometry(0, 0, self.width, self.height)
@@ -36,11 +49,13 @@ class ListEvents(QDialog):
         self.data_buttons_edit = {}
         self.data_buttons_delete = {}
         layout = QVBoxLayout(content_widget)
+
         button = QPushButton('Добавить событие')
         font = QFont("Times New Roman", 12)
         button.setFont(font)
         button.clicked.connect(self.add_event)
         layout.addWidget(button)
+
         for key, value in self.events.items():
             start = key
             for events in value:
@@ -53,6 +68,7 @@ class ListEvents(QDialog):
                     row_layout = QHBoxLayout(main_widget)
 
                     label_title = QLineEdit(title)
+                    label_title.setReadOnly(True)
                     label_title.setMinimumSize(201, 31)
                     label_title.setMaximumSize(201, 31)
                     font = QFont("Times New Roman", 14)
@@ -124,6 +140,7 @@ class ListEvents(QDialog):
                     layout.addWidget(main_widget)
 
     def add_event(self):
+        """Добавление события"""
         start = f'{"0" if self.row < 10 else ""}{self.row}:00'
         end = start.split(':')[0] + ':' + str(int(start.split(':')[1]) + 15)
         self.hide()
@@ -131,33 +148,11 @@ class ListEvents(QDialog):
         self.event.exec_()
 
     def edit_event(self):
-        par = self.data_buttons_edit[self.sender()]
-        time_start = par[0]
-        time_end = par[1]
-        date = par[2]
-        title = par[3]
-        description = par[4]
-        id_event = par[5]
-        self.event = NewEvent(time_start, time_end, date, additional=[title, description, id_event])
-        self.event.setModal(True)
-        self.event.exec_()
+        """Изменение события"""
+        self.func_edit(self.data_buttons_edit)
         self.hide()
 
     def delete_event(self):
-        id_event = self.data_buttons_delete[self.sender()]
-        msg_box = QMessageBox()
-        msg_box.setText("Вы уверены, что хотите удалить запись?")
-        msg_box.setIcon(QMessageBox.Question)
-        msg_box.setWindowTitle("Подтверждение")
-
-        msg_box.addButton(QMessageBox.Yes)
-        msg_box.addButton(QMessageBox.No)
-
-        result = msg_box.exec_()
-
-        if result == QMessageBox.Yes:
-            string = 'DELETE FROM events WHERE id = ?'
-            self.cur.execute(string, (id_event, ))
-
-        self.con.commit()
+        # Удаление события
+        self.func_delete(self.data_buttons_delete)
         self.hide()

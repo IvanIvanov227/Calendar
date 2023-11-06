@@ -1,46 +1,27 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QPushButton, QMessageBox, QStyle
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QDialog, QPushButton, QMessageBox, QVBoxLayout
 
-class MyDialog(QDialog):
-    def __init__(self):
-        super().__init__()
 
-        self.setWindowTitle("Диалог с дополнительными кнопками")
+class MyInputDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.initUI()
 
+    def initUI(self):
+        self.setWindowTitle("Мое диалоговое окно")
         layout = QVBoxLayout()
 
-        # Создаем кнопку со значком вопросительного знака
-        question_button = QPushButton("Кнопка с вопросительным знаком")
-        question_icon = self.style().standardIcon(QStyle.SP_MessageBoxQuestion)
-        question_button.setIcon(question_icon)
-        question_button.clicked.connect(self.showQuestionMessage)
-        layout.addWidget(question_button)
+        self.help_button = QPushButton('Помощь', self)
+        layout.addWidget(self.help_button)
 
-        # Добавляем дополнительные кнопки
-        custom_button1 = QPushButton("Кнопка 1")
-        custom_button1.clicked.connect(self.customButtonClicked1)
-        layout.addWidget(custom_button1)
+        self.help_button.clicked.connect(self.showHelp)
 
-        custom_button2 = QPushButton("Кнопка 2")
-        custom_button2.clicked.connect(self.customButtonClicked2)
-        layout.addWidget(custom_button2)
-
-        self.setLayout(layout)
-
-    def customButtonClicked1(self):
-        print("Кнопка 1 была нажата")
-
-    def customButtonClicked2(self):
-        print("Кнопка 2 была нажата")
-
-    def showQuestionMessage(self):
-        print("Кнопка со значком вопросительного знака была нажата")
-        QMessageBox.information(self, "Информация", "Справочное сообщение с вопросом")
+    def showHelp(self):
+        # Ваш код для открытия окна справки или выполнения других действий
+        QMessageBox.information(self, "Справка", "Это окно с контекстной справкой")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    dialog = MyDialog()
-    dialog.exec_()
+    ex = MyInputDialog()
+    ex.exec_()
     sys.exit(app.exec_())

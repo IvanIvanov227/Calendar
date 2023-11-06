@@ -1,13 +1,14 @@
 import os
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QDate
-from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QHeaderView, QTableWidget
+from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QHeaderView, QTableWidget, QInputDialog, QMessageBox
 from PyQt5.QtGui import QColor
 import datetime
 from new_event import NewEvent
 from settings import Settings
 from list_events import ListEvents
 import sqlite3
+from search import Search
 
 months = {1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель", 5: "Май", 6: "Июнь",
           7: "Июль", 8: "Август", 9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь"
@@ -16,37 +17,60 @@ name_days = {1: 'ПН', 2: 'ВТ', 3: 'СР', 4: 'ЧТ', 5: 'ПТ', 6: 'СБ', 7
 
 
 class Calendar(QMainWindow):
+    """Главный виджет приложения"""
     def __init__(self):
         super().__init__()
         os.chdir('..')
-        self.list_events = None
+        # Форма для поиска событий по названию
+        self.search_widget = None
+        # Форма для просмотра событий
+        self.list_events_widget = None
+        # Заголовок таблицы
         self.title = None
+        # Форма для настроек
         self.settings_widget = None
-        self.event = None
+        # Форма для добавления события
+        self.event_widget = None
+        # Цвет для выделения заголовка с текущим днём
         self.color_today = None
+        # Цвет для выделения событий
         self.color_events = None
-        self.set_colors_settings()
-        self.dict_dates = {}
-        self.list_dates_events = {}
+        # Данные о событии
+        self.data_for_events = {}
+        # Даты дней выбранной недели
         self.current_days = []
+        # Ячейки с событиями
         self.paint_events = []
 
         uic.loadUi('scripts/ui/main_ui.ui', self)
+        self.con = sqlite3.connect('scripts/db_calendar.sqlite')
+        self.cur = self.con.cursor()
         self.tableWidget.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.set_colors_settings()
+        self.hints()
+        self.clicks()
+        self.start()
+
+    def hints(self):
+        """Установление подсказок для виджетов"""
+        self.todayButton.setToolTip('Перейти на текущую неделю')
+        self.leftButton.setToolTip('Перейти на предыдущую неделю')
+        self.rightButton.setToolTip('Перейти на следующую неделю')
+        self.settingsButton.setToolTip('Настройки')
+        self.searchButton.setToolTip('Поиск событий')
+
+    def clicks(self):
+        """Установление связей виджетов с функциями"""
         self.settingsButton.clicked.connect(self.settings)
+        self.searchButton.clicked.connect(self.search)
         self.calendarWidget.selectionChanged.connect(self.on_calendar_selection_changed)
         self.tableWidget.cellClicked.connect(self.table_clicked)
         self.todayButton.clicked.connect(self.start)
-
-
-        self.todayButton.setToolTip('Это подсказка для виджета')
-
-
         self.leftButton.clicked.connect(self.new_week)
         self.rightButton.clicked.connect(self.new_week)
-        self.start()
 
     def set_colors_settings(self):
+        """Получение цветов из файлов"""
         with open('scripts/color_event.txt') as file:
             self.color_events = file.read()
             if self.color_events == '':
@@ -58,6 +82,7 @@ class Calendar(QMainWindow):
                 self.color_today = QColor(255, 0, 0)
 
     def start(self):
+        """Стартовая функция"""
         # Текущая дата
         today = datetime.date.today()
         # Номер дня в текущей неделе
@@ -70,25 +95,64 @@ class Calendar(QMainWindow):
         self.title_date_label()
 
     def table_clicked(self, row, col):
+        """Обрабатывание нажатия на таблицу"""
         if col != 0:
             flag = False
+            # Узнаём, есть ли в нажатой ячейке событие
             for i in self.paint_events:
                 if col == i[0] and i[1] <= row < i[2]:
                     flag = True
                     break
+            # Если есть, то создаём виджет со списком событий в данной ячейке
             if flag:
-                self.list_events = ListEvents(self.dict_dates[self.current_days[col - 1]], row, self.current_days[col - 1])
-                self.list_events.exec_()
+                par = (self.data_for_events[self.current_days[col - 1]], row, self.current_days[col - 1])
+                self.list_events_widget = ListEvents(*par, func_delete=self.delete_event, func_edit=self.edit_event)
+                self.list_events_widget.exec_()
+            # Если нет, то создаём виджет для добавления события
             else:
                 time_start = self.tableWidget.item(row, 0).text()
                 time_end = time_start[:2] + ':' + str(int(time_start[3:]) + 30)
                 date = self.current_days[col - 1]
-                self.event = NewEvent(time_start, time_end, date)
-                self.event.setModal(True)
-                self.event.exec_()
+                self.event_widget = NewEvent(time_start, time_end, date)
+                self.event_widget.setModal(True)
+                self.event_widget.exec_()
+            # Обновляем данные о событиях
             self.data_to_table()
 
+    def delete_event(self, data_buttons_delete):
+        """Удаление события"""
+        id_event = data_buttons_delete[self.sender()]
+        msg_box = QMessageBox()
+        msg_box.setText("Вы уверены, что хотите удалить запись?")
+        msg_box.setIcon(QMessageBox.Question)
+        msg_box.setWindowTitle("Подтверждение")
+
+        msg_box.addButton(QMessageBox.Yes)
+        msg_box.addButton(QMessageBox.No)
+
+        result = msg_box.exec_()
+
+        if result == QMessageBox.Yes:
+            string = 'DELETE FROM events WHERE id = ?'
+            self.cur.execute(string, (id_event, ))
+
+        self.con.commit()
+
+    def edit_event(self, data_buttons_edit):
+        """Изменение события"""
+        par = data_buttons_edit[self.sender()]
+        time_start = par[0]
+        time_end = par[1]
+        date = par[2]
+        title = par[3]
+        description = par[4]
+        id_event = par[5]
+        self.event_widget = NewEvent(time_start, time_end, date, additional=[title, description, id_event])
+        self.event_widget.setModal(True)
+        self.event_widget.exec_()
+
     def new_week(self):
+        """Переход на следующую или на предыдущую неделю"""
         date_string = self.current_days[0]
         day = datetime.datetime.strptime(date_string, '%Y-%m-%d').date()
         if self.sender().text() == '←':
@@ -101,6 +165,7 @@ class Calendar(QMainWindow):
         self.title_date_label()
 
     def title_date_label(self):
+        """Установление месяца и года выбранной недели"""
         title_months, title_years = list(), list()
         for i in self.current_days:
             if months[int(i.split('-')[1])] not in title_months:
@@ -118,6 +183,7 @@ class Calendar(QMainWindow):
         self.date_label.setText(label_string)
 
     def settings(self):
+        """Открытие виджета с настройками приложения"""
         self.settings_widget = Settings()
         self.settings_widget.setModal(True)
         self.settings_widget.exec_()
@@ -129,6 +195,7 @@ class Calendar(QMainWindow):
         self.draw_color_today()
 
     def on_calendar_selection_changed(self):
+        """Выбор пользователем даты в виджете календаря"""
         selected_date = self.calendarWidget.selectedDate().toString("yyyy-MM-dd")
         date = datetime.datetime.strptime(selected_date, "%Y-%m-%d").date()
         current_day_of_week = date.weekday()
@@ -137,17 +204,20 @@ class Calendar(QMainWindow):
         self.title_date_label()
 
     def update_table(self, start_of_week):
+        """Обновление заголовка таблицы и её записей"""
         self.current_days.clear()
+
         # Даты дней выбранной недели
         for i in range(7):
             current_day = start_of_week + datetime.timedelta(days=i)
             self.current_days.append(current_day.strftime("%Y-%m-%d"))
-        # Заголовок таблицы
+
         self.title = [' '] + [f"{name_days[i + 1]}\n{int(self.current_days[i].split('-')[-1])}" for i in range(7)]
 
         # Скрываем нумерацию строк
         header = self.tableWidget.verticalHeader()
         header.setVisible(False)
+
         self.tableWidget.setRowCount(0)
         self.tableWidget.setColumnCount(8)
         self.tableWidget.setHorizontalHeaderLabels(self.title)
@@ -166,7 +236,7 @@ class Calendar(QMainWindow):
         self.data_to_table()
 
     def draw_color_today(self):
-        # Закрашивание ячейки с текущим днём
+        """Закрашивание ячейки с текущим днём"""
         today = datetime.date.today()
         if str(today) in self.current_days:
             current_day_of_week = self.current_days.index(today.strftime("%Y-%m-%d")) + 1
@@ -178,11 +248,10 @@ class Calendar(QMainWindow):
                 self.tableWidget.horizontalHeaderItem(i).setBackground(QColor(255, 255, 255))
 
     def data_to_table(self):
-        con = sqlite3.connect('scripts/db_calendar.sqlite')
-        cur = con.cursor()
+        """Обновление данных о событиях"""
         string = 'SELECT date, time_start, time_end, title, description, id FROM events'
-        self.dict_dates = {}
-        result = cur.execute(string).fetchall()
+        self.data_for_events = {}
+        result = self.cur.execute(string).fetchall()
         for date in result:
             date_event = date[0]
             start = date[1]
@@ -191,25 +260,27 @@ class Calendar(QMainWindow):
             des = date[4]
             id_event = date[5]
             if date_event in self.current_days:
-                if date_event in self.dict_dates:
-                    if start in self.dict_dates[date_event]:
-                        self.dict_dates[date_event][start].append([title, des, end, id_event])
+                if date_event in self.data_for_events:
+                    if start in self.data_for_events[date_event]:
+                        self.data_for_events[date_event][start].append([title, des, end, id_event])
                     else:
-                        self.dict_dates[date_event][start] = [[title, des, end, id_event]]
+                        self.data_for_events[date_event][start] = [[title, des, end, id_event]]
                 else:
-                    self.dict_dates[date_event] = {start: [[title, des, end, id_event]]}
+                    self.data_for_events[date_event] = {start: [[title, des, end, id_event]]}
         self.draw_events()
 
     def draw_events(self):
+        """Получение ячеек таблицы с событиями"""
+        self.paint_events.clear()
         for i in range(24):
             for j in range(1, 8):
                 item = QTableWidgetItem()
                 item.setBackground(QColor(255, 255, 255))
                 self.tableWidget.setItem(i, j, item)
 
-        for day in self.dict_dates:
+        for day in self.data_for_events:
             col = self.current_days.index(day) + 1
-            for key, value in self.dict_dates[day].items():
+            for key, value in self.data_for_events[day].items():
                 start = int(key.split(':')[0])
                 for events in value:
                     end = int(events[2].split(':')[0])
@@ -220,7 +291,18 @@ class Calendar(QMainWindow):
                     self.paint_for_table(col, start, end)
 
     def paint_for_table(self, col, start, end):
+        """Закрашивание ячеек с событиями"""
         for i in range(start, end):
             item = QTableWidgetItem()
             item.setBackground(QColor(self.color_events))
             self.tableWidget.setItem(i, col, item)
+
+    def search(self):
+        """Виджет для поиска событий по названию"""
+        dialog = QInputDialog()
+        title, ok_pressed = dialog.getText(self, "Введите название события",
+                                           "Как называется событие?")
+        if ok_pressed:
+            self.search_widget = Search(title, func_delete=self.delete_event, func_edit=self.edit_event)
+            self.search_widget.exec_()
+            self.data_to_table()
