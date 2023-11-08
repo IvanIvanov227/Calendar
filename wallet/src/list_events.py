@@ -1,3 +1,4 @@
+from PyQt5 import uic
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon, QFont, QPixmap
 from PyQt5.QtWidgets import QDialog, QWidget, QScrollArea, QVBoxLayout, QPushButton, QHBoxLayout, QLabel
@@ -11,8 +12,6 @@ class ListEvents(QDialog):
     """Виджет со списком событий"""
     def __init__(self, events, row, day, func_delete=None, func_edit=None):
         super().__init__()
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-
         # Форма для добавления нового события
         self.event = None
         # Словарь, ключ - объект кнопки, значение - информация об это событии
@@ -24,11 +23,8 @@ class ListEvents(QDialog):
         self.func_delete = func_delete
         self.func_edit = func_edit
 
-        self.width = 800
-        self.height = 400
-        self.setGeometry(300, 300, self.width, self.height)
-        self.setWindowTitle("Список событий")
-        self.setFixedSize(self.width, self.height)
+        uic.loadUi('scripts/ui/list_events.ui', self)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         # Данные о событиях
         self.events = events
         # Номер записи и день выбранного события
@@ -40,21 +36,16 @@ class ListEvents(QDialog):
 
     def draw_events(self):
         """Отображение списка событий"""
-        scroll_area = QScrollArea(self)
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setGeometry(0, 0, self.width, self.height)
 
-        content_widget = QWidget()
-        scroll_area.setWidget(content_widget)
-        self.data_buttons_edit = {}
-        self.data_buttons_delete = {}
-        layout = QVBoxLayout(content_widget)
+        layout = QVBoxLayout(self.content_widget)
 
         button = QPushButton('Добавить событие')
         font = QFont("Times New Roman", 12)
         button.setFont(font)
         button.clicked.connect(self.add_event)
         layout.addWidget(button)
+        self.data_buttons_edit = {}
+        self.data_buttons_delete = {}
 
         for key, value in self.events.items():
             start = key
@@ -68,6 +59,7 @@ class ListEvents(QDialog):
                     row_layout = QHBoxLayout(main_widget)
 
                     label_title = QLineEdit(title)
+
                     label_title.setReadOnly(True)
                     label_title.setMinimumSize(201, 31)
                     label_title.setMaximumSize(201, 31)
@@ -111,6 +103,7 @@ class ListEvents(QDialog):
                     label_time_end.setAlignment(Qt.AlignCenter)
 
                     push_button_edit = QPushButton()
+                    push_button_edit.setToolTip('Редактировать событие')
                     push_button_edit.setMinimumSize(31, 31)
                     push_button_edit.setMaximumSize(31, 31)
                     push_button_edit.setIconSize(QSize(35, 35))
@@ -121,6 +114,7 @@ class ListEvents(QDialog):
                     push_button_edit.clicked.connect(self.edit_event)
 
                     push_button_delete = QPushButton()
+                    push_button_delete.setToolTip('Удалить событие')
                     push_button_delete.setMinimumSize(31, 31)
                     push_button_delete.setMaximumSize(31, 31)
                     pixmap = QPixmap("scripts/img/delete.png")

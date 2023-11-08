@@ -1,6 +1,6 @@
 import os
 from PyQt5 import uic
-from PyQt5.QtCore import Qt, QDate
+from PyQt5.QtCore import Qt, QDate, QTime, QTimer
 from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QHeaderView, QTableWidget, QInputDialog, QMessageBox
 from PyQt5.QtGui import QColor
 import datetime
@@ -48,6 +48,7 @@ class Calendar(QMainWindow):
         self.tableWidget.setEditTriggers(QTableWidget.NoEditTriggers)
         self.set_colors_settings()
         self.hints()
+        self.timer()
         self.clicks()
         self.start()
 
@@ -58,6 +59,17 @@ class Calendar(QMainWindow):
         self.rightButton.setToolTip('Перейти на следующую неделю')
         self.settingsButton.setToolTip('Настройки')
         self.searchButton.setToolTip('Поиск событий')
+
+    def timer(self):
+        """Обновление времени"""
+        timer = QTimer(self)
+        timer.timeout.connect(self.update_current_time)
+        timer.start(1000)
+
+    def update_current_time(self):
+        """Обновляет значение виджета current_time с текущим временем"""
+        current_time = QTime.currentTime().toString("hh:mm")
+        self.current_time.setText(current_time)
 
     def clicks(self):
         """Установление связей виджетов с функциями"""
@@ -303,6 +315,16 @@ class Calendar(QMainWindow):
         title, ok_pressed = dialog.getText(self, "Введите название события",
                                            "Как называется событие?")
         if ok_pressed:
-            self.search_widget = Search(title, func_delete=self.delete_event, func_edit=self.edit_event)
-            self.search_widget.exec_()
-            self.data_to_table()
+            string = 'SELECT date, time_start, time_end, title, id, description FROM events WHERE title = ?'
+            result = self.cur.execute(string, (title,)).fetchall()
+            if len(result) == 0:
+                message_box = QMessageBox()
+                message_box.setIcon(QMessageBox.Information)
+                message_box.setWindowTitle("Информация")
+                message_box.setText("Событий с данным названием не нашлось")
+                message_box.setStandardButtons(QMessageBox.Ok)
+                message_box.exec()
+            else:
+                self.search_widget = Search(result, func_delete=self.delete_event, func_edit=self.edit_event)
+                self.search_widget.exec_()
+                self.data_to_table()
