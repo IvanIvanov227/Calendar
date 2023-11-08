@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1129</width>
+    <height>778</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1129</width>
+    <height>778</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>1129</width>
+    <height>778</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Календарь</string>
+  </property>
+  <property name="iconSize">
+   <size>
+    <width>20</width>
+    <height>20</height>
+   </size>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTableWidget" name="tableWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>210</y>
+      <width>1111</width>
+      <height>561</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QCalendarWidget" name="calendarWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>312</width>
+      <height>183</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>312</width>
+      <height>183</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>312</width>
+      <height>183</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QLabel" name="date_label">
+    <property name="geometry">
+     <rect>
+      <x>730</x>
+      <y>120</y>
+      <width>401</width>
+      <height>81</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Bahnschrift Light Condensed</family>
+      <pointsize>20</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="settingsButton">
+    <property name="geometry">
+     <rect>
+      <x>1070</x>
+      <y>10</y>
+      <width>51</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset>
+      <normaloff>../img/settings.png</normaloff>../img/settings.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>50</width>
+      <height>50</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="searchButton">
+    <property name="geometry">
+     <rect>
+      <x>1010</x>
+      <y>10</y>
+      <width>51</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset>
+      <normaloff>../img/search.png</normaloff>../img/search.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>50</width>
+      <height>50</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QWidget" name="layoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>350</x>
+      <y>140</y>
+      <width>361</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="leftButton">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string>←</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="todayButton">
+       <property name="font">
+        <font>
+         <family>Bahnschrift Light Condensed</family>
+         <pointsize>14</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Сегодня</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="rightButton">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>→</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="layoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>370</x>
+      <y>20</y>
+      <width>341</width>
+      <height>81</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="font">
+        <font>
+         <family>Bahnschrift Light Condensed</family>
+         <pointsize>25</pointsize>
+         <italic>false</italic>
+        </font>
+       </property>
+       <property name="text">
+        <string>Время:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="current_time">
+       <property name="font">
+        <font>
+         <family>Franklin Gothic Demi Cond</family>
+         <pointsize>25</pointsize>
+         <weight>75</weight>
+         <italic>false</italic>
+         <bold>true</bold>
+         <underline>false</underline>
+         <strikeout>false</strikeout>
+         <kerning>true</kerning>
+        </font>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
