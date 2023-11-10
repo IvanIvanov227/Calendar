@@ -58,7 +58,7 @@ class Calendar(QMainWindow):
             QtWin.setCurrentProcessExplicitAppUserModelID(my_app_id)
         except ImportError:
             pass
-        self.con = sqlite3.connect('../scripts/db_calendar.sqlite')
+        self.con = sqlite3.connect('scripts/db_calendar.sqlite')
         self.cur = self.con.cursor()
         self.tableWidget.setEditTriggers(QTableWidget.NoEditTriggers)
         self.set_colors_settings()
@@ -133,19 +133,19 @@ class Calendar(QMainWindow):
 
     def set_colors_settings(self):
         """Получение цветов из файлов"""
-        with open('../scripts/color_event.txt') as file:
+        with open('scripts/color_event.txt') as file:
             self.color_events = file.read()
             if self.color_events == '':
                 self.color_events = QColor(0, 0, 255)
 
-        with open('../scripts/color_today.txt') as file2:
+        with open('scripts/color_today.txt') as file2:
             self.color_today = file2.read()
             if self.color_today == '':
                 self.color_today = QColor(255, 0, 0)
 
     def is_reminder(self):
         """Узнаёт о необходимости передавать напоминания"""
-        with open('../scripts/reminders.txt') as file:
+        with open('scripts/reminders.txt') as file:
             string = file.read()
             if string == 'True':
                 self.reminders = True
